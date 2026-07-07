@@ -3,9 +3,8 @@ This module contains utilities for inferring schemas from dictionaries.
 """
 import collections.abc
 import json
+import typing
 from typing import Any, Type
-
-from pydantic import typing
 
 from formatron import schemas
 
@@ -13,7 +12,7 @@ from formatron import schemas
 class FieldInfo(schemas.schema.FieldInfo):
     __slots__ = ("_annotation",)
 
-    def __init__(self, annotation: typing.Type):
+    def __init__(self, annotation: Type[Any]):
         """
         Initialize the field information.
 
@@ -23,7 +22,7 @@ class FieldInfo(schemas.schema.FieldInfo):
         self._annotation = annotation
 
     @property
-    def annotation(self) -> typing.Type[typing.Any] | None:
+    def annotation(self) -> Type[Any] | None:
         """
         Get the type annotation of the field.
         """
@@ -43,8 +42,8 @@ def _infer_type(value: Any) -> Type[Any]:
     elif isinstance(value, collections.abc.Sequence) and not isinstance(value, str):
         # Handle sequences with possibly heterogeneous elements
         if not value:
-            return collections.Sequence[Any]
-        element_types = set()
+            return collections.abc.Sequence[Any]
+        element_types = []
         for element in value:
             element_type = type(element)
             # Check for dictionary
@@ -53,18 +52,18 @@ def _infer_type(value: Any) -> Type[Any]:
                 original = element_type
             if original is typing.Mapping or isinstance(original, type) and issubclass(original,
                                                                                        collections.abc.Mapping):
-                element_types.add(infer_mapping(element))
-            else:
-                element_types.add(element_type)
+                element_type = infer_mapping(element)
+            if element_type not in element_types:
+                element_types.append(element_type)
         if len(element_types) == 1:
-            return collections.abc.Sequence[next(iter(element_types))]
+            return collections.abc.Sequence[element_types[0]]
         union_type = typing.Union[tuple(element_types)]
         return collections.abc.Sequence[union_type]
     else:
         return type(value)
 
 
-def infer_mapping(mapping: collections.abc.Mapping[str, Any]) -> typing.Type[schemas.schema.Schema]:
+def infer_mapping(mapping: collections.abc.Mapping[str, Any]) -> Type[schemas.schema.Schema]:
     """
     Recursively infer a schema from a mapping.
 

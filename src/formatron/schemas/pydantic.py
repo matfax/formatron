@@ -88,34 +88,31 @@ def callable_schema(func: CallableT, /, *, config: ConfigDict = None, validate_r
     signature = inspect.signature(func, eval_str=True)
     fields = {}
     for k, p in signature.parameters.items():
-        default = None
-        if p.default is not inspect.Signature.empty:
-            default = p.default
+        python_default = inspect.Signature.empty
+        if p.default is not inspect.Signature.empty and not isinstance(p.default, pydantic.fields.FieldInfo):
+            python_default = p.default
         actual_type = p.annotation
         metadata = []
+        fieldinfo = None
         if isinstance(p.default, pydantic.fields.FieldInfo):
-            fields[k] = p.default
+            fieldinfo = p.default
         if typing.get_origin(p.annotation) is typing.Annotated:
             actual_type, *meta = typing.get_args(p.annotation)
-            fieldinfo = None
             for i in meta:
                 if isinstance(i, pydantic.fields.FieldInfo):
                     fieldinfo = i
                 else:
                     metadata.append(i)
-            if fieldinfo is not None:
-                fields[k] = fieldinfo
-            if k in fields:
-                fields[k].default = default
-                fields[k].annotation = actual_type
-                fields[k].metadata.extend(metadata)
-                continue
-        if default is not None:
-            fields[k] = Field(default)
-        else:
-            fields[k] = Field()
-        fields[k].annotation = actual_type
-        fields[k].metadata.extend(metadata)
+        if fieldinfo is None:
+            if python_default is not inspect.Signature.empty:
+                fieldinfo = Field(python_default)
+            else:
+                fieldinfo = Field()
+        if python_default is not inspect.Signature.empty:
+            fieldinfo.default = python_default
+        fieldinfo.annotation = actual_type
+        fieldinfo.metadata.extend(metadata)
+        fields[k] = fieldinfo
     for k in fields:
         fields[k] = FieldInfo(fields[k])
 
@@ -123,11 +120,38 @@ def callable_schema(func: CallableT, /, *, config: ConfigDict = None, validate_r
         json_data = json.loads(json_str)
         positional_only = []
         others = {}
+        skipping_positional_only = False
         for k, p in signature.parameters.items():
+            if p.kind == p.VAR_POSITIONAL:
+                if k in json_data:
+                    value = json_data[k]
+                    if not isinstance(value, list):
+                        raise TypeError(f"{k} must be a JSON array")
+                    positional_only.extend(value)
+                continue
+            if p.kind == p.VAR_KEYWORD:
+                if k in json_data:
+                    value = json_data[k]
+                    if not isinstance(value, dict):
+                        raise TypeError(f"{k} must be a JSON object")
+                    others.update(value)
+                continue
+            required = fields[k].required
             if p.kind == p.POSITIONAL_ONLY:
-                positional_only.append(json_data[k])
+                if k in json_data:
+                    if skipping_positional_only:
+                        raise ValueError(f"cannot specify {k} without earlier positional-only parameters")
+                    positional_only.append(json_data[k])
+                else:
+                    if required:
+                        raise KeyError(k)
+                    skipping_positional_only = True
             else:
-                others[k] = json_data[k]
+                if k in json_data:
+                    others[k] = json_data[k]
+                else:
+                    if required:
+                        raise KeyError(k)
         return cls(*positional_only, **others)
 
     _class = type(

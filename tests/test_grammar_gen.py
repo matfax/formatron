@@ -306,6 +306,39 @@ def test_json_schema(snapshot):
     result = JsonExtractor("start", None,schema,lambda x:x).kbnf_definition
     snapshot.assert_match(result)
 
+def test_repeated_union_uses_field_local_nonterminals():
+    repeated_union = typing.Union[str, float]
+
+    class RepeatedUnionSchema(formatron.schemas.pydantic.ClassSchema):
+        name: repeated_union
+        tags: list[repeated_union]
+
+    result = JsonExtractor("start", None, RepeatedUnionSchema, lambda x: x).kbnf_definition
+
+    assert "start_name ::= start_name_0 | start_name_1;\n" in result
+    assert "start_name ::= start_tags_value;\n" not in result
+
+def test_json_schema_repeated_union_uses_field_local_nonterminals():
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://example.com/random-schema.json",
+        "type": "object",
+        "properties": {
+            "name": {"type": ["string", "number"]},
+            "tags": {
+                "type": "array",
+                "items": {"type": ["string", "number"]},
+                "minItems": 1,
+            },
+        },
+        "required": ["name"],
+    }
+
+    result = JsonExtractor("start", None, json_schema.create_schema(schema), lambda x: x).kbnf_definition
+
+    assert "start_name ::= start_name_0 | start_name_1;\n" in result
+    assert "start_name ::= start_tags_required_item;\n" not in result
+
 def test_recursive_binary_tree_schema(snapshot):
     binary_tree_schema = {
         "$id": "https://example.com/binary-tree.json",

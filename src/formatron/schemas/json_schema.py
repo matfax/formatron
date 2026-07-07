@@ -6,10 +6,10 @@ import collections
 import collections.abc
 import copy
 import json
+import typing
 from urllib.parse import urldefrag, urljoin
 import frozendict
 import jsonschema.validators
-from pydantic import typing
 import jsonschema
 from formatron import schemas
 from referencing import Registry, Resource
@@ -275,7 +275,7 @@ def _handle_list_metadata(schema: dict[str, typing.Any], json_schema_id_to_schem
     if metadata:
         if "additional_items" not in metadata:
             metadata["additional_items"] = True
-        return schemas.schema.TypeWithMetadata(list, metadata)
+        return schemas.schema.TypeWithMetadata(list[item_type], metadata)
     return list[item_type]
 
 

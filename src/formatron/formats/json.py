@@ -422,6 +422,17 @@ def _register_all_predefined_types():
     register_generate_nonterminal_def(builtin_sequence)
     register_generate_nonterminal_def(builtin_dict)
 
+def _should_cache_nonterminal_identity(current: typing.Any) -> bool:
+    return (
+        isinstance(current, schemas.schema.FieldInfo)
+        or isinstance(current, schemas.schema.TypeWithMetadata)
+        or (
+            isinstance(current, type)
+            and not isinstance(current, types.GenericAlias)
+            and issubclass(current, schemas.schema.Schema)
+        )
+    )
+
 def _generate_kbnf_grammar(schema: schemas.schema.Schema|collections.abc.Sequence, start_nonterminal: str) -> str:
     """
     Generate a KBNF grammar string from a schema for JSON format.
@@ -443,24 +454,39 @@ def _generate_kbnf_grammar(schema: schemas.schema.Schema|collections.abc.Sequenc
         id(dict): "object",
         id(typing.Any): "json_value",
     }
+    active_type_id_to_nonterminal = {}
     result = [GRAMMAR_HEADER]
-    nonterminals = set()
-    stack = [(schema, start_nonterminal)]
+    stack = [("visit", schema, start_nonterminal)]
     while stack:
-        (current, nonterminal) = stack.pop()
+        action, current, nonterminal = stack.pop()
+        if action == "leave":
+            current_id = id(current)
+            type_id_to_nonterminal[current_id] = nonterminal
+            del active_type_id_to_nonterminal[current_id]
+            continue
+
         type_id = id(current)
         if type_id in type_id_to_nonterminal:
             line = f"{nonterminal} ::= {type_id_to_nonterminal[type_id]};\n"
             result.append(line)
             continue
-        type_id_to_nonterminal[type_id] = nonterminal
+        if type_id in active_type_id_to_nonterminal:
+            line = f"{nonterminal} ::= {active_type_id_to_nonterminal[type_id]};\n"
+            result.append(line)
+            continue
+
+        cache_identity = _should_cache_nonterminal_identity(current)
+        if cache_identity:
+            active_type_id_to_nonterminal[type_id] = nonterminal
+
         for i in _type_to_nonterminals:
             value = i(current, nonterminal)
             if value is not None:
                 line, to_stack = value
                 result.append(line)
-                stack.extend(to_stack)
-                nonterminals.add(nonterminal)
+                if cache_identity:
+                    stack.append(("leave", current, nonterminal))
+                stack.extend(("visit", sub_type, sub_nonterminal) for sub_type, sub_nonterminal in to_stack)
                 break
         else:
             raise TypeError(
