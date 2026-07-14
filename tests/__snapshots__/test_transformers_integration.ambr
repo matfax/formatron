@@ -1,0 +1,48 @@
+# serializer version: 1
+# name: test_transformers_batched_inference
+  list([
+    '''
+      <|endoftext|><|endoftext|>I am GPT2. Hello, Huggingface!
+      <|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>
+    ''',
+    '''
+      <|endoftext|>I am another GPT2. Hello, Huggingface!
+      <|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>
+    ''',
+    '''
+      I am yet another GPT2. Hello, Huggingface! Hello, Huggingface!
+      <|endoftext|>
+    ''',
+  ])
+# ---
+# name: test_transformers_integration
+  list([
+    '''
+      I am GPT2. Hello, Huggingface!
+      <|endoftext|>
+    ''',
+  ])
+# ---
+# name: test_transformers_sparse_formatters
+  list([
+    '<|endoftext|><|endoftext|>I am GPT2. \xa0I am GPT3. \xa0I am GPT4. \xa0I am GPT5. \xa0I am GPT6. \xa0I am GPT7. \xa0I am GPT8. \xa0I am GPT9. \xa0I am GPT10. \xa0I am GPT11. \xa0I am GPT12. \xa0I am GPT13. \xa0I am GPT14. \xa0I am G',
+    '''
+      <|endoftext|>I am another GPT2. Hello, Huggingface!
+      <|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>
+    ''',
+    'I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. \xa0I am a third GPT2. ',
+    '''
+      I am a fourth GPT2. Hello, Huggingface!
+      <|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|><|endoftext|>
+    ''',
+    'I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. \xa0I am a fifth GPT2. ',
+  ])
+# ---
+# name: test_transformers_text_generation_pipeline
+  dict({
+    'generated_text': '''
+      I am GPT2. Hello, Huggingface!
+  
+    ''',
+  })
+# ---

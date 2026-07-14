@@ -1,0 +1,19 @@
+# serializer version: 1
+# name: test_vllm_integration[future_of_ai]
+  "Prompt: 'The future of AI is', Generated text: '强大的【VLLM】！！！\\n'"
+# ---
+# name: test_vllm_integration[hello_my_name_is]
+  "Prompt: 'Hello, my name is', Generated text: 'definitely vllm!\\n'"
+# ---
+# name: test_vllm_integration_sparse[first_prompt]
+  "Prompt: 'The first prompt is', Generated text: 'formatted with vllm!\\n'"
+# ---
+# name: test_vllm_integration_sparse[fourth_prompt]
+  'Prompt: \'The fourth prompt is\', Generated text: \' a "I\\\'m sorry" prompt, which is a "I\\\'m sorry" prompt.\\n\\nThe fifth prompt is a "I\\\'m sorry" prompt, which is a "I\\\'m sorry" prompt.\\n\\nThe sixth prompt is a "\''
+# ---
+# name: test_vllm_integration_sparse[second_prompt]
+  "Prompt: 'The second prompt is', Generated text: ' a list of the items that are currently in the list.\\n\\nThe third prompt is a list of the items that are currently in the list.\\n\\nThe fourth prompt is a list of the items that are currently in the list.\\n\\n'"
+# ---
+# name: test_vllm_integration_sparse[third_prompt]
+  "Prompt: 'The third prompt is', Generated text: 'also formatted but is slightly longer!\\n'"
+# ---

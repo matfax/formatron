@@ -1,0 +1,504 @@
+# serializer version: 1
+# name: test_formatter[captures]
+  dict({
+    'ID': "<re.Match object; span=(0, 1), match='a'>",
+    'food': 'orange',
+    'json': "Test(name='Van', weight=1.4, color='pink')",
+  })
+# ---
+# name: test_formatter[grammar]
+  '''
+  __choice_0_0_food ::= 'railroad' | 'orange' | 'banana';
+  __regex_1_0 ::= #'[0-9]+';
+  __regex_2_0 ::= #'[a-z]+';
+  __choice_3_0_ID ::= __regex_1_0 | __regex_2_0;
+  integer ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)";
+  number ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?";
+  string ::= #'[ 	
+  ]*"([^\\\\"\u0000-\u001f]|\\\\["\\\\bfnrt]|\\\\u[0-9A-Fa-f]{4})*"';
+  boolean ::= #"[ 	
+  ]*(true|false)";
+  null ::= #"[ 	
+  ]*null";
+  array ::= array_begin (json_value (comma json_value)*)? array_end;
+  object ::= object_begin (string colon json_value (comma string colon json_value)*)? object_end;
+  json_value ::= number|string|boolean|null|array|object;
+  comma ::= #"[ 	
+  ]*,";
+  colon ::= #"[ 	
+  ]*:";
+  object_begin ::= #"[ 	
+  ]*\\{";
+  object_end ::= #"[ 	
+  ]*\\}";
+  array_begin ::= #"[ 	
+  ]*\\[";
+  array_end ::= #"[ 	
+  ]*\\]";
+  __json_4_0_json ::= object_begin #'[ 	
+  ]*' '"name"' colon __json_4_0_json_name comma #'[ 	
+  ]*' '"weight"' colon __json_4_0_json_weight comma #'[ 	
+  ]*' '"color"' colon __json_4_0_json_color object_end;
+  __json_4_0_json_color ::= string;
+  __json_4_0_json_weight ::= number;
+  __json_4_0_json_name ::= string;
+  
+  start ::= 'Today, I want to eat ' __choice_0_0_food '\n' "My food's ID is " __choice_3_0_ID '.\n' "\nWhat's more, indentations\nare handled\nappropriately." 'My weight is 14.4kg and my color is pink. This is my personal info json: ' __json_4_0_json '\n';
+  '''
+# ---
+# name: test_formatter[output]
+  '''
+  Today, I want to eat orange
+  My food's ID is a.
+  
+  What's more, indentations
+  are handled
+  appropriately.My weight is 14.4kg and my color is pink. This is my personal info json: 	{
+  	"name": "Van",
+  	"weight": 1.4,
+  	"color": "pink"
+  }
+  
+  '''
+# ---
+# name: test_formatter_alternate_accept[captures]
+  dict({
+    'age': "<re.Match object; span=(0, 2), match='30'>",
+    'name': "<re.Match object; span=(0, 5), match='John,'>",
+  })
+# ---
+# name: test_formatter_callable_schema[captures]
+  dict({
+    'json': 6,
+  })
+# ---
+# name: test_formatter_callable_schema[grammar]
+  '''
+  integer ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)";
+  number ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?";
+  string ::= #'[ 	
+  ]*"([^\\\\"\u0000-\u001f]|\\\\["\\\\bfnrt]|\\\\u[0-9A-Fa-f]{4})*"';
+  boolean ::= #"[ 	
+  ]*(true|false)";
+  null ::= #"[ 	
+  ]*null";
+  array ::= array_begin (json_value (comma json_value)*)? array_end;
+  object ::= object_begin (string colon json_value (comma string colon json_value)*)? object_end;
+  json_value ::= number|string|boolean|null|array|object;
+  comma ::= #"[ 	
+  ]*,";
+  colon ::= #"[ 	
+  ]*:";
+  object_begin ::= #"[ 	
+  ]*\\{";
+  object_end ::= #"[ 	
+  ]*\\}";
+  array_begin ::= #"[ 	
+  ]*\\[";
+  array_end ::= #"[ 	
+  ]*\\]";
+  __json_0_0_json ::= object_begin #'[ 	
+  ]*' '"a"' colon __json_0_0_json_a comma #'[ 	
+  ]*' '"b"' colon __json_0_0_json_b comma #'[ 	
+  ]*' '"c"' colon __json_0_0_json_c object_end;
+  __json_0_0_json_c ::= integer;
+  __json_0_0_json_b ::= integer;
+  __json_0_0_json_a ::= integer;
+  
+  start ::= __json_0_0_json '\n';
+  '''
+# ---
+# name: test_formatter_callable_schema[output]
+  '''
+  
+    {
+      "a": 1,
+      "b": 2,
+      "c": 3
+    }
+  
+  '''
+# ---
+# name: test_formatter_dict_inference[captures]
+  dict({
+    'json': dict({
+      'gender': 'male',
+      'name': 'abcd',
+    }),
+  })
+# ---
+# name: test_formatter_dict_inference[grammar]
+  '''
+  integer ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)";
+  number ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?";
+  string ::= #'[ 	
+  ]*"([^\\\\"\u0000-\u001f]|\\\\["\\\\bfnrt]|\\\\u[0-9A-Fa-f]{4})*"';
+  boolean ::= #"[ 	
+  ]*(true|false)";
+  null ::= #"[ 	
+  ]*null";
+  array ::= array_begin (json_value (comma json_value)*)? array_end;
+  object ::= object_begin (string colon json_value (comma string colon json_value)*)? object_end;
+  json_value ::= number|string|boolean|null|array|object;
+  comma ::= #"[ 	
+  ]*,";
+  colon ::= #"[ 	
+  ]*:";
+  object_begin ::= #"[ 	
+  ]*\\{";
+  object_end ::= #"[ 	
+  ]*\\}";
+  array_begin ::= #"[ 	
+  ]*\\[";
+  array_end ::= #"[ 	
+  ]*\\]";
+  __json_0_0_json ::= object_begin #'[ 	
+  ]*' '"name"' colon __json_0_0_json_name comma #'[ 	
+  ]*' '"gender"' colon __json_0_0_json_gender object_end;
+  __json_0_0_json_gender ::= string;
+  __json_0_0_json_name ::= string;
+  
+  start ::= __json_0_0_json '\n';
+  '''
+# ---
+# name: test_formatter_dict_inference[output]
+  '''
+  		
+  	{
+  		"name": "abcd",
+  		"gender": "male"
+  	}
+  
+  '''
+# ---
+# name: test_formatter_json_no_properties[captures]
+  dict({
+    'data': dict({
+      'key': 'value',
+      'number': 42,
+    }),
+  })
+# ---
+# name: test_formatter_json_schema[captures]
+  dict({
+    'json': dict({
+      'age': 20,
+      'name': 'Test',
+    }),
+  })
+# ---
+# name: test_formatter_json_schema[grammar]
+  '''
+  integer ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)";
+  number ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?";
+  string ::= #'[ 	
+  ]*"([^\\\\"\u0000-\u001f]|\\\\["\\\\bfnrt]|\\\\u[0-9A-Fa-f]{4})*"';
+  boolean ::= #"[ 	
+  ]*(true|false)";
+  null ::= #"[ 	
+  ]*null";
+  array ::= array_begin (json_value (comma json_value)*)? array_end;
+  object ::= object_begin (string colon json_value (comma string colon json_value)*)? object_end;
+  json_value ::= number|string|boolean|null|array|object;
+  comma ::= #"[ 	
+  ]*,";
+  colon ::= #"[ 	
+  ]*:";
+  object_begin ::= #"[ 	
+  ]*\\{";
+  object_end ::= #"[ 	
+  ]*\\}";
+  array_begin ::= #"[ 	
+  ]*\\[";
+  array_end ::= #"[ 	
+  ]*\\]";
+  __json_0_0_json ::= object_begin #'[ 	
+  ]*' '"name"' colon __json_0_0_json_name comma #'[ 	
+  ]*' '"age"' colon __json_0_0_json_age object_end;
+  __json_0_0_json_age ::= integer;
+  __json_0_0_json_name ::= string;
+  
+  start ::= __json_0_0_json '\n';
+  '''
+# ---
+# name: test_formatter_json_schema[output]
+  '''
+  {"name":"Test","age":20}
+  
+  '''
+# ---
+# name: test_formatter_regex_complement[captures]
+  dict({
+  })
+# ---
+# name: test_formatter_regex_complement[grammar]
+  '''
+  __regex_complement_0_0_non_numeric ::= #ex'[0-9]';
+  __regex_1_0_numeric ::= #'[0-9]+';
+  start ::= 'Text: ' __regex_complement_0_0_non_numeric 'Number: ' __regex_1_0_numeric '\n';
+  '''
+# ---
+# name: test_formatter_regex_complement[manual_captures]
+  dict({
+    'non_numeric': 'Hello, world! Number: ',
+    'numeric': "<re.Match object; span=(0, 2), match='42'>",
+  })
+# ---
+# name: test_formatter_regex_complement[output]
+  '''
+  Text: "hello, world!"
+  
+  Assistant: - "Hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  - "hello, world!"
+  
+  '''
+# ---
+# name: test_formatter_str[captures]
+  dict({
+  })
+# ---
+# name: test_formatter_str[grammar]
+  '''
+  __str_0_0 ::= #'.*?(?:\\.)';
+  start ::= __str_0_0 '\n';
+  '''
+# ---
+# name: test_formatter_str[output]
+  '我是杰克. 我是爱德华. 我是马克. 我是马丁. 我是皮特. 我是约翰. 我是罗伯特. 我是迈克. 我是罗伯特. 我是迈克. 我是迈克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我是杰克. 我'
+# ---
+# name: test_formatter_substr[captures]
+  dict({
+    'substr': ' 114.514 dollars;',
+  })
+# ---
+# name: test_formatter_substr[grammar]
+  '''
+  __substr_0_0_substr ::= #substrs'Name: Umbrella; Price: 114.514 dollars;';
+  start ::= __substr_0_0_substr '<eos>';
+  '''
+# ---
+# name: test_formatter_substr[output]
+  ' 114.514 dollars;<eos>'
+# ---
+# name: test_formatter_top_level_array_json_schema[captures]
+  dict({
+    'json': list([
+      dict({
+        'active': True,
+        'id': 1,
+        'name': 'Alex',
+      }),
+      dict({
+        'active': True,
+        'id': 2,
+        'name': 'Katherine',
+      }),
+      dict({
+        'active': True,
+        'id': 3,
+        'name': 'Jason',
+      }),
+      dict({
+        'active': True,
+        'id': 4,
+        'name': 'Julie',
+      }),
+    ]),
+  })
+# ---
+# name: test_formatter_top_level_array_json_schema[grammar]
+  '''
+  integer ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)";
+  number ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?";
+  string ::= #'[ 	
+  ]*"([^\\\\"\u0000-\u001f]|\\\\["\\\\bfnrt]|\\\\u[0-9A-Fa-f]{4})*"';
+  boolean ::= #"[ 	
+  ]*(true|false)";
+  null ::= #"[ 	
+  ]*null";
+  array ::= array_begin (json_value (comma json_value)*)? array_end;
+  object ::= object_begin (string colon json_value (comma string colon json_value)*)? object_end;
+  json_value ::= number|string|boolean|null|array|object;
+  comma ::= #"[ 	
+  ]*,";
+  colon ::= #"[ 	
+  ]*:";
+  object_begin ::= #"[ 	
+  ]*\\{";
+  object_end ::= #"[ 	
+  ]*\\}";
+  array_begin ::= #"[ 	
+  ]*\\[";
+  array_end ::= #"[ 	
+  ]*\\]";
+  __json_0_0_json_min ::= __json_0_0_json_item;
+  __json_0_0_json ::= array_begin __json_0_0_json_min comma __json_0_0_json_item array_end;
+  __json_0_0_json ::= array_begin __json_0_0_json_min comma __json_0_0_json_item comma __json_0_0_json_item array_end;
+  __json_0_0_json ::= array_begin __json_0_0_json_min comma __json_0_0_json_item comma __json_0_0_json_item comma __json_0_0_json_item array_end;
+  __json_0_0_json ::= array_begin __json_0_0_json_min comma __json_0_0_json_item comma __json_0_0_json_item comma __json_0_0_json_item comma __json_0_0_json_item array_end;
+  __json_0_0_json_item ::= object_begin #'[ 	
+  ]*' '"id"' colon __json_0_0_json_item_id comma #'[ 	
+  ]*' '"name"' colon __json_0_0_json_item_name __json_0_0_json_item_optional_after_2? object_end;
+  __json_0_0_json_item_optional_after_2 ::= comma #'[ 	
+  ]*' '"active"' colon __json_0_0_json_item_active;
+  __json_0_0_json_item_active ::= boolean;
+  __json_0_0_json_item_name ::= string;
+  __json_0_0_json_item_id ::= integer;
+  
+  start ::= __json_0_0_json '\n';
+  '''
+# ---
+# name: test_formatter_top_level_array_json_schema[output]
+  '''
+  [{"id":1,"name":"Alex","active":true},{"id":2,"name":"Katherine","active":true},{"id":3,"name":"Jason","active":true},{"id":4,"name":"Julie","active":true}]
+  
+  '''
+# ---
+# name: test_grammar_literal[captures]
+  dict({
+    'json': "A(a='114')",
+  })
+# ---
+# name: test_grammar_literal[grammar]
+  '''
+  integer ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)";
+  number ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?";
+  string ::= #'[ 	
+  ]*"([^\\\\"\u0000-\u001f]|\\\\["\\\\bfnrt]|\\\\u[0-9A-Fa-f]{4})*"';
+  boolean ::= #"[ 	
+  ]*(true|false)";
+  null ::= #"[ 	
+  ]*null";
+  array ::= array_begin (json_value (comma json_value)*)? array_end;
+  object ::= object_begin (string colon json_value (comma string colon json_value)*)? object_end;
+  json_value ::= number|string|boolean|null|array|object;
+  comma ::= #"[ 	
+  ]*,";
+  colon ::= #"[ 	
+  ]*:";
+  object_begin ::= #"[ 	
+  ]*\\{";
+  object_end ::= #"[ 	
+  ]*\\}";
+  array_begin ::= #"[ 	
+  ]*\\[";
+  array_end ::= #"[ 	
+  ]*\\]";
+  __json_0_0_json ::= object_begin #'[ 	
+  ]*' '"a"' colon __json_0_0_json_a object_end;
+  __json_0_0_json_a ::= #'[ 	
+  ]*' '"114"' | #'[ 	
+  ]*' '"514"';
+  
+  start ::= __json_0_0_json '\n';
+  '''
+# ---
+# name: test_grammar_literal[output]
+  '''
+  
+  					{
+  						"a": "114"
+  					}
+  
+  '''
+# ---
+# name: test_utf8_json_key[captures]
+  dict({
+  })
+# ---
+# name: test_utf8_json_key[grammar]
+  '''
+  integer ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)";
+  number ::= #"[ 	
+  ]*-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?";
+  string ::= #'[ 	
+  ]*"([^\\\\"\u0000-\u001f]|\\\\["\\\\bfnrt]|\\\\u[0-9A-Fa-f]{4})*"';
+  boolean ::= #"[ 	
+  ]*(true|false)";
+  null ::= #"[ 	
+  ]*null";
+  array ::= array_begin (json_value (comma json_value)*)? array_end;
+  object ::= object_begin (string colon json_value (comma string colon json_value)*)? object_end;
+  json_value ::= number|string|boolean|null|array|object;
+  comma ::= #"[ 	
+  ]*,";
+  colon ::= #"[ 	
+  ]*:";
+  object_begin ::= #"[ 	
+  ]*\\{";
+  object_end ::= #"[ 	
+  ]*\\}";
+  array_begin ::= #"[ 	
+  ]*\\[";
+  array_end ::= #"[ 	
+  ]*\\]";
+  __json_0_0_json ::= object_begin object_end | object_begin __json_0_0_json_optional_body object_end;
+  __json_0_0_json_optional_body ::= __json_0_0_json_optional_first_0;
+  __json_0_0_json_optional_first_0 ::= #'[ 	
+  ]*' '"土豆"' colon __json_0_0_json_u571fu8c46 __json_0_0_json_optional_after_1? | __json_0_0_json_optional_first_1;
+  __json_0_0_json_optional_first_1 ::= #'[ 	
+  ]*' '"\\\\(@^0^@)/"' colon __json_0_0_json_u5cu28u40u5e0u5eu40u29u2f __json_0_0_json_optional_after_2? | __json_0_0_json_optional_first_2;
+  __json_0_0_json_optional_first_2 ::= #'[ 	
+  ]*' '"🍎"' colon __json_0_0_json_u1f34e;
+  __json_0_0_json_optional_after_0 ::= comma #'[ 	
+  ]*' '"土豆"' colon __json_0_0_json_u571fu8c46 __json_0_0_json_optional_after_1? | __json_0_0_json_optional_after_1;
+  __json_0_0_json_optional_after_1 ::= comma #'[ 	
+  ]*' '"\\\\(@^0^@)/"' colon __json_0_0_json_u5cu28u40u5e0u5eu40u29u2f __json_0_0_json_optional_after_2? | __json_0_0_json_optional_after_2;
+  __json_0_0_json_optional_after_2 ::= comma #'[ 	
+  ]*' '"🍎"' colon __json_0_0_json_u1f34e;
+  __json_0_0_json_u1f34e ::= string;
+  __json_0_0_json_u5cu28u40u5e0u5eu40u29u2f ::= string;
+  __json_0_0_json_u571fu8c46 ::= string;
+  
+  start ::= __json_0_0_json '\n';
+  '''
+# ---
+# name: test_utf8_json_key[output]
+  ' \t{"\\\\(@^0^@)/":"\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\\\w+@\\\\w+)/\\\\n\\\\(\\'
+# ---

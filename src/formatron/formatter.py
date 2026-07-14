@@ -3,7 +3,6 @@ This module contains the Formatter class and its related classes.
 """
 import abc
 import collections
-from json import JSONDecodeError
 import json
 import re
 import textwrap
@@ -189,7 +188,7 @@ class Formatter(FormatterBase):
             if result is None:
                 captured = None
             else:
-                generated_output, captured = matcher.extract(generated_output)
+                generated_output, captured = result
             if matcher.capture_name:
                 if matcher.capture_name in self._captures:
                     self._captures[matcher.capture_name] = [
@@ -392,12 +391,12 @@ class FormatterBuilder:
             if isinstance(local_schema, type) and issubclass(local_schema, Schema):
                 try:
                     return local_schema.from_json(_json)
-                except JSONDecodeError:  # make ChoiceExtractor work appropriately
+                except ValueError:
                     return None
             else:
                 try:
                     return json.loads(_json)
-                except JSONDecodeError:
+                except ValueError:
                     return None
         return self._add_extractor("json",
                                    lambda nonterminal: JsonExtractor(nonterminal, capture_name,schema, to_json))

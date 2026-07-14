@@ -25,19 +25,15 @@ def execute():
     outputs = llm.generate(prompts, sampling_params)
     context.tokens += len(outputs[0].outputs[0].token_ids)
     # print(repr(outputs[0].outputs[0].text))
-    logits_processor = sampling_params.logits_processors
-    if logits_processor and isinstance(logits_processor[0], FormattersLogitsProcessor):
-        # print(logits_processor[0]._formatters[0]._token_ids)
-        logits_processor[0].reset()
 
 
 
 def formatron_vllm_address():
     f = FormatterBuilder()
     f.append_str(f"{f.json(Address, capture_name='json')}")
-    logits_processor = create_formatters_logits_processor(llm, [f])
+    sampling_extra_args = create_formatters_logits_processor([f])
     sampling_params = SamplingParams(
-        temperature=1, top_p=0.5, max_tokens=100, logits_processors=[logits_processor])
+        temperature=1, top_p=0.5, max_tokens=100, extra_args=sampling_extra_args[0])
     return sampling_params
 
 
@@ -59,9 +55,9 @@ def formatron_vllm_linkedlist():
     f = FormatterBuilder()
     f.append_str(
         f"{f.json(LinkedList, capture_name='json')}")
-    logits_processor = create_formatters_logits_processor(llm, [f])
+    sampling_extra_args = create_formatters_logits_processor([f])
     sampling_params = SamplingParams(
-        temperature=1, top_p=0.5, max_tokens=100, logits_processors=[logits_processor])
+        temperature=1, top_p=0.5, max_tokens=100, extra_args=sampling_extra_args[0])
     return sampling_params
 
 
@@ -75,9 +71,9 @@ def lfe_vllm_linkedlist():
 def formatron_vllm_order():
     f = FormatterBuilder()
     f.append_str(f"{f.json(Order, capture_name='json')}")
-    logits_processor = create_formatters_logits_processor(llm, [f])
+    sampling_extra_args = create_formatters_logits_processor([f])
     sampling_params = SamplingParams(
-        temperature=1, top_p=0.5, max_tokens=350, logits_processors=[logits_processor])
+        temperature=1, top_p=0.5, max_tokens=350, extra_args=sampling_extra_args[0])
     return sampling_params
 
 
@@ -108,7 +104,7 @@ def bench(result: BenchResult, context: Context, func, bench_name: str, f):
     result.t1 = context.tokens
     context.index = 0
     context.tokens = 0
-    sampling_params.logits_processors = []
+    sampling_params.extra_args = None
     result.s2 = (timeit(func, number=len(inputs)))
     result.t2 = context.tokens
     log(bench_name, result, f)
@@ -124,8 +120,11 @@ if __name__ == "__main__":
 
                 Extract information into json format: """
         tail = "<|eot_id|><|start_header_id|>assistant<|end_header_id|>```\n"
-        llm = LLM(model="NurtureAI/Meta-Llama-3-8B-Instruct-32k",
-                  max_model_len=4096)
+        llm = LLM(
+            model="NurtureAI/Meta-Llama-3-8B-Instruct-32k",
+            max_model_len=4096,
+            logits_processors=[FormattersLogitsProcessor],
+        )
         # --------------------------------------------------------------------------------------------------------------
         inputs = load_address()
         sampling_params = formatron_vllm_address()
@@ -160,8 +159,11 @@ if __name__ == "__main__":
 
             Extract information into json format: """
         tail = "[/INST]```\n"
-        llm = LLM(model="mistralai/Mistral-7B-Instruct-v0.3",
-                  max_model_len=4096)
+        llm = LLM(
+            model="mistralai/Mistral-7B-Instruct-v0.3",
+            max_model_len=4096,
+            logits_processors=[FormattersLogitsProcessor],
+        )
         # --------------------------------------------------------------------------------------------------------------
         inputs = load_address()
         sampling_params = formatron_vllm_address()

@@ -1,7 +1,15 @@
+import pytest
+
+torch = pytest.importorskip("torch")
+transformers = pytest.importorskip("transformers")
+
+if not torch.cuda.is_available():
+    pytest.skip("CUDA is unavailable", allow_module_level=True)
+
 from formatron.integrations.transformers import create_formatter_logits_processor_list
 from formatron.formatter import FormatterBuilder
-from transformers import GPT2LMHeadModel
-import transformers
+
+GPT2LMHeadModel = transformers.GPT2LMHeadModel
 
 def test_transformers_integration(snapshot):
     f = FormatterBuilder()
@@ -13,8 +21,9 @@ def test_transformers_integration(snapshot):
     model.generation_config.pad_token_id = tokenizer.eos_token_id
     logits_processor = create_formatter_logits_processor_list(tokenizer, f)
     inputs = tokenizer(["I am GPT2. "], return_tensors="pt").to(device="cuda:0")
-    snapshot.assert_match(
-        tokenizer.batch_decode(model.generate(**inputs, max_new_tokens=100, logits_processor=logits_processor)))
+    assert tokenizer.batch_decode(
+        model.generate(**inputs, max_new_tokens=100, logits_processor=logits_processor)
+    ) == snapshot
 
 
 def test_transformers_batched_inference(snapshot):
@@ -31,8 +40,9 @@ def test_transformers_batched_inference(snapshot):
                                                               f, f, f3])
     inputs = tokenizer(["I am GPT2. ", "I am another GPT2. ", "I am yet another GPT2. "], return_tensors="pt",
                        padding=True).to(device="cuda:0")
-    snapshot.assert_match(
-        tokenizer.batch_decode(model.generate(**inputs, max_new_tokens=100, logits_processor=logits_processor)))
+    assert tokenizer.batch_decode(
+        model.generate(**inputs, max_new_tokens=100, logits_processor=logits_processor)
+    ) == snapshot
     # Special tokens are not skipped for debugging purpose. In application, you probably want to skip.
 
 
@@ -55,7 +65,7 @@ def test_transformers_sparse_formatters(snapshot):
     
     outputs = model.generate(**inputs, max_new_tokens=100, logits_processor=logits_processor)
     
-    snapshot.assert_match(tokenizer.batch_decode(outputs))
+    assert tokenizer.batch_decode(outputs) == snapshot
 
 
 def test_transformers_text_generation_pipeline(snapshot):
@@ -69,4 +79,4 @@ def test_transformers_text_generation_pipeline(snapshot):
             "openai-community/gpt2", device_map="cuda"),
         tokenizer=tokenizer,
         logits_processor=logits_processor)
-    snapshot.assert_match(pipeline("I am GPT2. ", max_new_tokens=100)[0])
+    assert pipeline("I am GPT2. ", max_new_tokens=100)[0] == snapshot

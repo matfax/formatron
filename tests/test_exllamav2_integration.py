@@ -1,13 +1,30 @@
-from exllamav2 import ExLlamaV2, ExLlamaV2Config, ExLlamaV2Cache, ExLlamaV2Tokenizer
-from exllamav2.generator import ExLlamaV2DynamicGenerator
+from pathlib import Path
+
+import pytest
+
+exllamav2 = pytest.importorskip("exllamav2")
+generator = pytest.importorskip("exllamav2.generator")
+torch = pytest.importorskip("torch")
+
+if not torch.cuda.is_available():
+    pytest.skip("CUDA is unavailable", allow_module_level=True)
+
+if not Path("local_assets/Meta-Llama-3-8B-Instruct-32k/").exists():
+    pytest.skip("ExLlamaV2 assets are unavailable", allow_module_level=True)
+
+ExLlamaV2 = exllamav2.ExLlamaV2
+ExLlamaV2Config = exllamav2.ExLlamaV2Config
+ExLlamaV2Cache = exllamav2.ExLlamaV2Cache
+ExLlamaV2Tokenizer = exllamav2.ExLlamaV2Tokenizer
+ExLlamaV2DynamicGenerator = generator.ExLlamaV2DynamicGenerator
 import formatron.schemas.json_schema
 from formatron.formatter import FormatterBuilder
 from formatron.integrations.exllamav2 import create_formatter_filter
-from exllamav2.generator import ExLlamaV2Sampler
 import kbnf
-import torch
 import gc
 from formatron.integrations.exllamav2 import create_engine_vocabulary, FormatterFilter
+
+ExLlamaV2Sampler = generator.ExLlamaV2Sampler
 
 def test_exllamav2_integration(snapshot):
     model_dir = "local_assets/Meta-Llama-3-8B-Instruct-32k/"
@@ -30,7 +47,7 @@ def test_exllamav2_integration(snapshot):
         add_bos=True,
         filters=[exllama_filter]
     )
-    snapshot.assert_match(output)
+    assert output == snapshot
     del model
     del generator
     del cache
@@ -97,7 +114,7 @@ def test_exllamav2_json_schema(snapshot):
         filters=[exllama_filter],
         gen_settings=settings
     )
-    snapshot.assert_match(output)
+    assert output == snapshot
     del model
     del generator
     del cache
@@ -129,7 +146,7 @@ def test_exllamav2_utf_8(snapshot):
         add_bos=True,
         filters=[exllama_filter]
     )
-    snapshot.assert_match(output)
+    assert output == snapshot
     del model
     del generator
     del cache
@@ -160,7 +177,7 @@ def test_exllamav2_batched_inference(snapshot):
         add_bos=True,
         filters=[[exllama_filter], [exllama_filter2]]
     )
-    snapshot.assert_match(output)
+    assert output == snapshot
     del model
     del generator
     del cache

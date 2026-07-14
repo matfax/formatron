@@ -106,10 +106,9 @@ class LiteralExtractor(Extractor):
         """
         Extract the literal from the input string, or `None` if the literal is not found.
         """
-        pos = input_str.find(self._literal)
-        if pos == -1:
+        if not input_str.startswith(self._literal):
             return None
-        return input_str[pos + len(self._literal):], self._literal
+        return input_str[len(self._literal):], self._literal
 
     @property
     def kbnf_reference(self) -> str:
@@ -200,5 +199,4 @@ class SubstringExtractor(NonterminalExtractor):
     @property
     def kbnf_definition(self) -> str:
         return f"{self.nonterminal} ::= #substrs{repr(self._string)};"
-
 

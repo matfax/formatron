@@ -1,0 +1,13 @@
+# serializer version: 1
+# name: test_rwkv_integration[first_output]
+  '''
+  Hello, RWKV!
+  
+  '''
+# ---
+# name: test_rwkv_integration[second_output]
+  '''
+  Hello, RWKV!
+  
+  '''
+# ---

@@ -207,11 +207,11 @@ from formatron.integrations.transformers import create_formatter_logits_processo
 def add(a: int, b: int, /, *, c: int):
     return a + b + c
 
-model = AutoModelForCausalLM.from_pretrained("NurtureAI/Meta-Llama-3-8B-Instruct-32k",
+model = AutoModelForCausalLM.from_pretrained("microsoft/Phi-3-mini-128k-instruct",
                                                 device_map="cuda",
                                                 torch_dtype=torch.float16)
 tokenizer = transformers.AutoTokenizer.from_pretrained(
-    "NurtureAI/Meta-Llama-3-8B-Instruct-32k")
+    "microsoft/Phi-3-mini-128k-instruct")
 inputs = tokenizer(["""<|system|>
 You are a helpful assistant.<|end|>
 <|user|>a is 1, b is 6 and c is 7. Generate a json containing them.<|end|>
@@ -274,11 +274,11 @@ factor     ::= number | "(" expression ")";
 number     ::= #"[0-9]+(\\\\.[0-9]+)?";
 """.replace("expression", self.nonterminal)
 
-model = AutoModelForCausalLM.from_pretrained("NurtureAI/Meta-Llama-3-8B-Instruct-32k",
+model = AutoModelForCausalLM.from_pretrained("microsoft/Phi-3-mini-128k-instruct",
                                                 device_map="cuda",
                                                 torch_dtype=torch.float16)
 tokenizer = transformers.AutoTokenizer.from_pretrained(
-    "NurtureAI/Meta-Llama-3-8B-Instruct-32k")
+    "microsoft/Phi-3-mini-128k-instruct")
 inputs = tokenizer(["""<|system|>
     You are a helpful assistant.<|end|>
     <|user|>Repeat it: ((32+43)*114)<|end|>

@@ -33,7 +33,7 @@ def test_pydantic_substring_constraint(snapshot):
         substring_str: typing.Annotated[str, Field(substring_of="Hello, world!")]
 
     result = JsonExtractor("start", None, SubstringConstraints, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_json_schema_substring_constraint(snapshot):
     schema = {
@@ -51,7 +51,7 @@ def test_json_schema_substring_constraint(snapshot):
 
     SubstringSchema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, SubstringSchema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_json_schema_object_without_properties(snapshot):
     schema = {
@@ -63,12 +63,12 @@ def test_json_schema_object_without_properties(snapshot):
     ObjectSchema = json_schema.create_schema(schema)
     print(ObjectSchema)
     result = JsonExtractor("start", None, ObjectSchema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 
 def test_pydantic_class(snapshot):
     result = JsonExtractor("start", None,Test,lambda x:x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_pydantic_string_constraints(snapshot):
     class StringConstraints(formatron.schemas.pydantic.ClassSchema):
@@ -78,7 +78,7 @@ def test_pydantic_string_constraints(snapshot):
         combined_str: typing.Annotated[str, Field(min_length=2, max_length=5)]
 
     result = JsonExtractor("start", None, StringConstraints, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_pydantic_integer_constraints(snapshot):
     class IntegerConstraints(formatron.schemas.pydantic.ClassSchema):
@@ -92,7 +92,7 @@ def test_pydantic_integer_constraints(snapshot):
         nonpositive_int: NonPositiveInt
 
     result = JsonExtractor("start", None, IntegerConstraints, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_pydantic_float_constraints(snapshot):
     class FloatConstraints(formatron.schemas.pydantic.ClassSchema):
@@ -106,7 +106,7 @@ def test_pydantic_float_constraints(snapshot):
         nonpositive_float: NonPositiveFloat
 
     result = JsonExtractor("start", None, FloatConstraints, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_pydantic_sequence_constraints(snapshot):
     class SequenceConstraints(formatron.schemas.pydantic.ClassSchema):
@@ -119,7 +119,7 @@ def test_pydantic_sequence_constraints(snapshot):
         empty_list: typing.Annotated[typing.List[typing.Any], Field(min_length=0)]
 
     result = JsonExtractor("start", None, SequenceConstraints, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 
 def test_json_schema_integer_constraints(snapshot):
@@ -149,7 +149,7 @@ def test_json_schema_integer_constraints(snapshot):
     }
     schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_json_schema_number_constraints(snapshot):
     schema = {
@@ -178,7 +178,7 @@ def test_json_schema_number_constraints(snapshot):
     }
     schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_json_schema_array_min_max_items_constraints(snapshot):
     schema = {
@@ -207,7 +207,7 @@ def test_json_schema_array_min_max_items_constraints(snapshot):
     }
     schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_json_schema_array_prefix_items(snapshot):
     schema = {
@@ -258,7 +258,44 @@ def test_json_schema_array_prefix_items(snapshot):
     }
     schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
+
+
+def test_json_schema_prefix_items_respects_max_items():
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://example.com/prefix-items-max-items-schema.json",
+        "type": "array",
+        "prefixItems": [
+            {"type": "string"},
+            {"type": "number"},
+        ],
+        "maxItems": 1,
+        "items": {"type": "boolean"},
+    }
+
+    result = JsonExtractor("start", None, json_schema.create_schema(schema), lambda x: x).kbnf_definition
+
+    assert "start ::= array_begin start_item_0 array_end;" in result
+    assert "start ::= array_begin start_item_0 comma start_item_1 array_end;" not in result
+
+
+def test_json_schema_unbounded_prefix_items_emits_all_prefix_variants():
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://example.com/prefix-items-unbounded-schema.json",
+        "type": "array",
+        "prefixItems": [
+            {"type": "string"},
+            {"type": "number"},
+        ],
+        "items": {"type": "boolean"},
+    }
+
+    result = JsonExtractor("start", None, json_schema.create_schema(schema), lambda x: x).kbnf_definition
+
+    assert "start ::= array_begin start_item_0 (comma start_item)* array_end;" in result
+    assert "start ::= array_begin start_item_0 comma start_item_1 (comma start_item)* array_end;" in result
 
 
 def test_json_schema(snapshot):
@@ -304,7 +341,7 @@ def test_json_schema(snapshot):
     }
     schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None,schema,lambda x:x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_repeated_union_uses_field_local_nonterminals():
     repeated_union = typing.Union[str, float]
@@ -339,6 +376,48 @@ def test_json_schema_repeated_union_uses_field_local_nonterminals():
     assert "start_name ::= start_name_0 | start_name_1;\n" in result
     assert "start_name ::= start_tags_required_item;\n" not in result
 
+def test_json_schema_optional_fields_keep_required_keys_well_formed():
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://example.com/optional-fields.json",
+        "type": "object",
+        "properties": {
+            "nickname": {"type": "string"},
+            "name": {"type": "string"},
+            "age": {"type": "integer"},
+        },
+        "required": ["name"],
+    }
+
+    result = JsonExtractor("start", None, json_schema.create_schema(schema), lambda x: x).kbnf_definition
+
+    assert 'start ::= object_begin start_leading_optional_fields? #\'[ \t\n]*\' \'"name"\' colon start_name start_optional_after_2? object_end;\n' in result
+    assert "start_leading_optional_fields ::= start_optional_first_0 comma;\n" in result
+    assert "start_nickname ::= string;\n" in result
+    assert "start_age ::= integer;\n" in result
+    assert "start_nickname_required" not in result
+    assert "start_age_required" not in result
+
+
+def test_json_schema_all_optional_fields_can_be_omitted():
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://example.com/all-optional-fields.json",
+        "type": "object",
+        "properties": {
+            "nickname": {"type": "string"},
+            "age": {"type": "integer"},
+        },
+    }
+
+    result = JsonExtractor("start", None, json_schema.create_schema(schema), lambda x: x).kbnf_definition
+
+    assert 'start ::= object_begin object_end | object_begin start_optional_body object_end;\n' in result
+    assert "start_optional_body ::= start_optional_first_0;\n" in result
+    assert 'start_optional_first_0 ::= #\'[ \t\n]*\' \'"nickname"\' colon start_nickname start_optional_after_1? | start_optional_first_1;\n' in result
+    assert 'start_optional_first_1 ::= #\'[ \t\n]*\' \'"age"\' colon start_age;\n' in result
+    assert 'start_optional_after_1 ::= comma #\'[ \t\n]*\' \'"age"\' colon start_age;\n' in result
+
 def test_recursive_binary_tree_schema(snapshot):
     binary_tree_schema = {
         "$id": "https://example.com/binary-tree.json",
@@ -353,7 +432,7 @@ def test_recursive_binary_tree_schema(snapshot):
     }
     schema = json_schema.create_schema(binary_tree_schema)
     result = JsonExtractor("start", None, schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_recursive_linked_list_schema(snapshot):
     linked_list_schema = {
@@ -370,7 +449,7 @@ def test_recursive_linked_list_schema(snapshot):
     }
     schema = json_schema.create_schema(linked_list_schema)
     result = JsonExtractor("start", None, schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_schema_with_reference(snapshot):
     schema1 = {
@@ -399,7 +478,7 @@ def test_schema_with_reference(snapshot):
 
     combined_schema = json_schema.create_schema(schema1, Resource.from_contents(schema2) @ Registry())
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_schema_with_anchor_reference(snapshot):
     schema = {
@@ -426,7 +505,7 @@ def test_schema_with_anchor_reference(snapshot):
 
     combined_schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_schema_with_embedded_schema(snapshot):
     schema = {
@@ -459,7 +538,7 @@ def test_schema_with_embedded_schema(snapshot):
     # Combine both schemas
     combined_schema = json_schema.create_schema(schema_with_reference, Resource.from_contents(schema) @ Registry())
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_schema_with_reference_to_number(snapshot):
     schema = {
@@ -482,7 +561,7 @@ def test_schema_with_reference_to_number(snapshot):
 
     combined_schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 
 def test_schema_with_top_level_array(snapshot):
@@ -504,7 +583,7 @@ def test_schema_with_top_level_array(snapshot):
 
     combined_schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_schema_with_union_array_object(snapshot):
     schema = {
@@ -523,7 +602,7 @@ def test_schema_with_union_array_object(snapshot):
 
     combined_schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_schema_with_top_level_anyOf(snapshot):
     schema = {
@@ -552,7 +631,7 @@ def test_schema_with_top_level_anyOf(snapshot):
 
     combined_schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_schema_with_string_metadata(snapshot):
     schema = {
@@ -583,7 +662,7 @@ def test_schema_with_string_metadata(snapshot):
 
     combined_schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 
 def test_schema_with_anyOf_inside_array(snapshot):
@@ -615,12 +694,12 @@ def test_schema_with_anyOf_inside_array(snapshot):
 
     combined_schema = json_schema.create_schema(schema)
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 
 def test_pydantic_class_linked_list(snapshot):
     result = JsonExtractor("start", None,LinkedList,lambda x:x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 
 def test_pydantic_callable(snapshot):
@@ -629,7 +708,17 @@ def test_pydantic_callable(snapshot):
         return a + b
 
     result = JsonExtractor("start", None,foo,lambda x:x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
+
+
+def test_pydantic_callable_none_default_uses_python_default():
+    @formatron.schemas.pydantic.callable_schema
+    def foo(x: int | None = None):
+        return x
+
+    assert foo.fields()["x"].required is False
+    assert foo.from_json("{}") is None
+    assert foo.from_json('{"x": 3}') == 3
 
 
 def test_infer_mapping(snapshot):
@@ -643,7 +732,7 @@ def test_infer_mapping(snapshot):
       "urls": ["xx", "xx", "xx"]
     }
     """)),lambda x:x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot
 
 def test_schema_with_dynamic_ref(snapshot):
     schema = {
@@ -678,4 +767,4 @@ def test_schema_with_dynamic_ref(snapshot):
     combined_schema = json_schema.create_schema(extended_schema, Resource.from_contents(schema) @ Registry())
     
     result = JsonExtractor("start", None, combined_schema, lambda x: x).kbnf_definition
-    snapshot.assert_match(result)
+    assert result == snapshot

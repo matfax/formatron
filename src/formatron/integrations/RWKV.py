@@ -45,14 +45,16 @@ class PIPELINE(rwkv.utils.PIPELINE):  # NOSONAR
     A wrapper for the pipeline of RWKV.
     """
 
-    def __init__(self, model, WORD_NAME, formatter_builder: FormatterBuilder = None):  # NOSONAR
+    def __init__(self, model, WORD_NAME, formatter_builder: FormatterBuilder | None = None):  # NOSONAR
         super().__init__(model, WORD_NAME)
-        vocabulary = create_engine_vocabulary(WORD_NAME, self.tokenizer)
-        formatter = formatter_builder.build(vocabulary, lambda tokens: self.tokenizer.decode(tokens))
-        if formatter is not None:
-            self.formatter = formatter
-        else:
+        if formatter_builder is None:
             self.formatter = None
+            return
+
+        vocabulary = create_engine_vocabulary(WORD_NAME, self.tokenizer)
+        self.formatter = formatter_builder.build(
+            vocabulary, lambda tokens: self.tokenizer.decode(tokens)
+        )
 
     def generate(self, ctx, token_count=100, args=PIPELINE_ARGS(), callback=None, state=None):
         all_tokens = []

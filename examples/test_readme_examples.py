@@ -1,9 +1,18 @@
+import pytest
+
+
+torch = pytest.importorskip("torch")
+transformers = pytest.importorskip("transformers")
+
+if not torch.cuda.is_available():
+    pytest.skip("CUDA is unavailable", allow_module_level=True)
+
+AutoModelForCausalLM = transformers.AutoModelForCausalLM
+
+
 def test_readme_example():
-    import torch
     from formatron.integrations.transformers import create_formatter_logits_processor_list
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
     torch.manual_seed(514)
     model = AutoModelForCausalLM.from_pretrained("microsoft/Phi-3-mini-128k-instruct",
                                                  device_map="cuda",
@@ -28,11 +37,8 @@ You are a helpful assistant.<|end|>
 
 
 def test_readme_example2():
-    import torch
     from formatron.integrations.transformers import create_formatter_logits_processor_list
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
     from formatron.schemas.dict_inference import infer_mapping
     torch.manual_seed(520)
     model = AutoModelForCausalLM.from_pretrained("microsoft/Phi-3-mini-128k-instruct",
@@ -60,9 +66,6 @@ def test_readme_example3():
     from formatron.schemas.pydantic import ClassSchema
     from formatron.integrations.transformers import create_formatter_logits_processor_list
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
-    import torch
 
     class Goods(ClassSchema):
         name: str
@@ -92,22 +95,19 @@ You are a helpful assistant.<|end|>
 
 
 def test_readme_example4():
-    import torch
     from formatron import schemas
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
     from formatron.integrations.transformers import create_formatter_logits_processor_list
 
     @schemas.pydantic.callable_schema
     def add(a: int, b: int, /, *, c: int):
         return a + b + c
 
-    model = AutoModelForCausalLM.from_pretrained("NurtureAI/Meta-Llama-3-8B-Instruct-32k",
+    model = AutoModelForCausalLM.from_pretrained("microsoft/Phi-3-mini-128k-instruct",
                                                  device_map="cuda",
                                                  torch_dtype=torch.float16)
     tokenizer = transformers.AutoTokenizer.from_pretrained(
-        "NurtureAI/Meta-Llama-3-8B-Instruct-32k")
+        "microsoft/Phi-3-mini-128k-instruct")
     inputs = tokenizer(["""<|system|>
     You are a helpful assistant.<|end|>
     <|user|>a is 1, b is 6 and c is 7. Generate a json containing them.<|end|>
@@ -123,10 +123,7 @@ def test_readme_example4():
 
 
 def test_readme_example5():
-    import torch
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
     from formatron.integrations.transformers import create_formatter_logits_processor_list
     from formatron.extractor import NonterminalExtractor
     import typing
@@ -165,11 +162,11 @@ factor     ::= number | "(" expression ")";
 number     ::= #"[0-9]+(\\\\.[0-9]+)?";
 """.replace("expression", self.nonterminal)
 
-    model = AutoModelForCausalLM.from_pretrained("NurtureAI/Meta-Llama-3-8B-Instruct-32k",
+    model = AutoModelForCausalLM.from_pretrained("microsoft/Phi-3-mini-128k-instruct",
                                                  device_map="cuda",
                                                  torch_dtype=torch.float16)
     tokenizer = transformers.AutoTokenizer.from_pretrained(
-        "NurtureAI/Meta-Llama-3-8B-Instruct-32k")
+        "microsoft/Phi-3-mini-128k-instruct")
     inputs = tokenizer(["""<|system|>
         You are a helpful assistant.<|end|>
         <|user|>Repeat it: ((32+43)*114)<|end|>
@@ -189,9 +186,6 @@ def test_readme_example6():
     from formatron.schemas import json_schema
     from formatron.integrations.transformers import create_formatter_logits_processor_list
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
-    import torch
 
     schema = {
         "$id": "https://example.com/person.json",
@@ -231,9 +225,6 @@ You are a helpful assistant.<|end|>
 def test_readme_example7():
     from formatron.integrations.transformers import create_formatter_logits_processor_list
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
-    import torch
 
     torch.manual_seed(520)
     model = AutoModelForCausalLM.from_pretrained("microsoft/Phi-3-mini-128k-instruct",
@@ -261,9 +252,6 @@ def test_readme_example8():
     from formatron.integrations.transformers import create_formatter_logits_processor_list
     from formatron.schemas.schema import SubstringOf
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
-    import torch
     import typing
     from pydantic import Field
 
@@ -295,9 +283,6 @@ def test_readme_example9():
     from formatron.schemas import json_schema
     from formatron.integrations.transformers import create_formatter_logits_processor_list
     from formatron.formatter import FormatterBuilder
-    from transformers import AutoModelForCausalLM
-    import transformers
-    import torch
 
     schema = {
         "$id": "https://example.com/animal.json",
@@ -333,14 +318,3 @@ You are a helpful assistant.<|end|>
     print(logits_processor[0].formatters_captures)
     # possible output:
     # [{'json': {'animal': 'fox'}}]
-
-
-test_readme_example()
-test_readme_example2()
-test_readme_example3()
-test_readme_example4()
-test_readme_example5()
-test_readme_example6()
-test_readme_example7()
-test_readme_example8()
-test_readme_example9()

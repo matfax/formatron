@@ -3,6 +3,7 @@ The module defines the `JsonExtractor` class, which is used to extract data from
 """
 import collections
 import decimal
+import json
 import types
 import typing
 
@@ -51,8 +52,7 @@ def from_str_to_kbnf_str(s: str) -> str:
     Returns:
         The kbnf string.
     """
-    s = f"\"{repr(s)[1:-1]}\""
-    return f"#'{SPACE_NONTERMINAL}{s}'"
+    return f"#'{SPACE_NONTERMINAL}' {repr(json.dumps(s, ensure_ascii=False))}"
 
 _type_to_nonterminals = []
 
@@ -77,30 +77,134 @@ def register_generate_nonterminal_def(
 
 
 def _register_all_predefined_types():
+    def _generate_optional_field_rules(
+        nonterminal: str,
+        field_references: list[tuple[int, str]],
+        *,
+        first_with_comma: bool,
+    ) -> tuple[str, list[str]]:
+        after_rule_names = [
+            escape_identifier(f"{nonterminal}_optional_after_{index}")
+            for index, _ in field_references
+        ]
+        after_rules = []
+        for position in range(len(field_references) - 1, -1, -1):
+            _, field_reference = field_references[position]
+            rule_name = after_rule_names[position]
+            if position == len(field_references) - 1:
+                after_rules.append(f"{rule_name} ::= comma {field_reference};\n")
+            else:
+                after_rules.append(
+                    f"{rule_name} ::= comma {field_reference} {after_rule_names[position + 1]}? | {after_rule_names[position + 1]};\n"
+                )
+        after_rules.reverse()
+        if first_with_comma:
+            return after_rule_names[0], after_rules
+
+        first_rule_names = [
+            escape_identifier(f"{nonterminal}_optional_first_{index}")
+            for index, _ in field_references
+        ]
+        first_rules = []
+        for position in range(len(field_references) - 1, -1, -1):
+            _, field_reference = field_references[position]
+            rule_name = first_rule_names[position]
+            if position == len(field_references) - 1:
+                first_rules.append(f"{rule_name} ::= {field_reference};\n")
+            else:
+                first_rules.append(
+                    f"{rule_name} ::= {field_reference} {after_rule_names[position + 1]}? | {first_rule_names[position + 1]};\n"
+                )
+        first_rules.reverse()
+        return first_rule_names[0], first_rules + after_rules
+
     def schema(current: typing.Type, nonterminal: str):
         if isinstance(current, type) and not isinstance(current, types.GenericAlias) \
                 and issubclass(current, schemas.schema.Schema):
-            line = [f"{nonterminal} ::= ", "object_begin "]
             result = []
-            fields = []
-            for field, _field_info in current.fields().items():
+            field_references = []
+            for index, (field, _field_info) in enumerate(current.fields().items()):
                 field_name = f"{nonterminal}_{field}"
                 field_name = escape_identifier(field_name)
                 key = from_str_to_kbnf_str(field)
-                fields.append(f"{key} colon {field_name}")
-                result.append((_field_info, field_name))
-            line.append(" comma ".join(fields))
-            line.append(" object_end;\n")
-            return "".join(line), result
-        return None
+                field_references.append((index, _field_info.required, f"{key} colon {field_name}"))
+                result.append((_field_info.annotation, field_name))
 
-    def field_info(current: typing.Type, nonterminal: str):
-        if isinstance(current, schemas.schema.FieldInfo):
-            annotation = current.annotation
-            if current.required:
-                return "", [(annotation, nonterminal)]
-            new_nonterminal = f"{nonterminal}_required"
-            return f"{nonterminal} ::= {new_nonterminal}?;\n", [(annotation, new_nonterminal)]
+            if not field_references:
+                return f"{nonterminal} ::= object_begin object_end;\n", result
+
+            if all(required for _, required, _ in field_references):
+                fields = [field_reference for _, _, field_reference in field_references]
+                return f"{nonterminal} ::= object_begin {' comma '.join(fields)} object_end;\n", result
+
+            rule_lines = []
+            required_indexes = [i for i, (_, required, _) in enumerate(field_references) if required]
+
+            if not required_indexes:
+                optional_fields = [(index, field_reference) for index, _, field_reference in field_references]
+                optional_root, optional_rules = _generate_optional_field_rules(
+                    nonterminal,
+                    optional_fields,
+                    first_with_comma=False,
+                )
+                optional_body = escape_identifier(f"{nonterminal}_optional_body")
+                rule_lines.append(
+                    f"{nonterminal} ::= object_begin object_end | object_begin {optional_body} object_end;\n"
+                )
+                rule_lines.append(f"{optional_body} ::= {optional_root};\n")
+                rule_lines.extend(optional_rules)
+                return "".join(rule_lines), result
+
+            body = []
+            first_required_position = required_indexes[0]
+            leading_optional_fields = [
+                (index, field_reference)
+                for index, _, field_reference in field_references[:first_required_position]
+            ]
+            if leading_optional_fields:
+                optional_root, optional_rules = _generate_optional_field_rules(
+                    nonterminal,
+                    leading_optional_fields,
+                    first_with_comma=False,
+                )
+                leading_optional_rule = escape_identifier(f"{nonterminal}_leading_optional_fields")
+                rule_lines.append(f"{leading_optional_rule} ::= {optional_root} comma;\n")
+                body.append(f"{leading_optional_rule}?")
+                rule_lines.extend(optional_rules)
+
+            body.append(field_references[first_required_position][2])
+
+            for previous_required, current_required in zip(required_indexes, required_indexes[1:]):
+                optional_fields = [
+                    (index, field_reference)
+                    for index, _, field_reference in field_references[previous_required + 1:current_required]
+                ]
+                if optional_fields:
+                    optional_root, optional_rules = _generate_optional_field_rules(
+                        nonterminal,
+                        optional_fields,
+                        first_with_comma=True,
+                    )
+                    body.append(f"{optional_root}?")
+                    rule_lines.extend(optional_rules)
+                body.append("comma")
+                body.append(field_references[current_required][2])
+
+            trailing_optional_fields = [
+                (index, field_reference)
+                for index, _, field_reference in field_references[required_indexes[-1] + 1:]
+            ]
+            if trailing_optional_fields:
+                optional_root, optional_rules = _generate_optional_field_rules(
+                    nonterminal,
+                    trailing_optional_fields,
+                    first_with_comma=True,
+                )
+                body.append(f"{optional_root}?")
+                rule_lines.extend(optional_rules)
+
+            rule_lines.insert(0, f"{nonterminal} ::= object_begin {' '.join(body)} object_end;\n")
+            return "".join(rule_lines), result
         return None
 
     def string_metadata(current: typing.Type, nonterminal: str):
@@ -183,7 +287,7 @@ def _register_all_predefined_types():
         prefix_items = current.metadata.get("prefix_items")
         additional_items = current.metadata.get("additional_items")
         if max_items is not None and prefix_items is not None and max_items <= len(prefix_items): # truncate prefix items
-            prefix_items = prefix_items[:max_items+1]
+            prefix_items = prefix_items[:max_items]
         if prefix_items:
             if not min_items: # json schema defaults to 0
                 min_items = 0
@@ -209,10 +313,10 @@ def _register_all_predefined_types():
                 if not prefix_items:
                     min_items_part = ' comma '.join([new_nonterminal] * (min_items - 1))
                     ebnf_rules.append(f"{nonterminal} ::= array_begin {min_items_part} comma {new_nonterminal}+ array_end;")
-                elif len(prefix_items_parts) >= min_items: # this part assumes prefix items are not empty, so we need the EMPTY_PREFIX_ITEMS_ALLOWED check above
+                elif prefix_items_parts: # this part assumes prefix items are not empty, so we need the EMPTY_PREFIX_ITEMS_ALLOWED check above
                     for prefix_items_part in prefix_items_parts:
                         prefix_items_part = ' comma '.join(prefix_items_part)
-                    ebnf_rules.append(f"{nonterminal} ::= array_begin {prefix_items_part} (comma {new_nonterminal})* array_end;")
+                        ebnf_rules.append(f"{nonterminal} ::= array_begin {prefix_items_part} (comma {new_nonterminal})* array_end;")
                 else:
                     min_items_part = ' comma '.join([new_nonterminal] * (min_items - len(prefix_items_nonterminals)-1))
                     if  min_items_part:
@@ -414,7 +518,6 @@ def _register_all_predefined_types():
 
     register_generate_nonterminal_def(builtin_simple_types)
     register_generate_nonterminal_def(schema)
-    register_generate_nonterminal_def(field_info)
     register_generate_nonterminal_def(metadata)
     register_generate_nonterminal_def(builtin_tuple)
     register_generate_nonterminal_def(builtin_literal)
@@ -603,8 +706,14 @@ class JsonExtractor(extractor.NonterminalExtractor):
         # The position now points to the character after the last '}', so we slice to position
         json_str = input_str[:position]
         remaining_str = input_str[position:]
+        try:
+            extracted = self._to_object(json_str)
+        except ValueError:
+            return None
+        if extracted is None:
+            return None
         # Return the unparsed remainder of the string and the decoded JSON object
-        return remaining_str, self._to_object(json_str)
+        return remaining_str, extracted
 
     @property
     def kbnf_definition(self):
